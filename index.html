@@ -190,6 +190,63 @@
             margin-bottom: 16px;
         }
         .trash-toggle input { width: auto; padding: 0; }
+
+        /* ---- People picker ---- */
+        .filter-bar {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 18px;
+            background: #f8fafc;
+        }
+        .filter-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .filter-label {
+            font-weight: 600;
+            font-size: 13px;
+            color: #475569;
+        }
+        .filter-clear {
+            background: transparent;
+            color: var(--primary);
+            padding: 2px 6px;
+            font-size: 13px;
+            text-decoration: underline;
+        }
+        .filter-clear:hover { background: #e2e8f0; }
+        .people-tray {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        .person-toggle {
+            background: var(--card);
+            color: #334155;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 5px 12px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .person-toggle:hover { background: #e2e8f0; }
+        .person-toggle[aria-pressed="true"] {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #ffffff;
+        }
+        .person-toggle[aria-pressed="true"]:hover { background: #1d4ed8; }
+        .filter-note {
+            font-size: 12px;
+            color: var(--secondary);
+            margin-top: 10px;
+        }
+        .filter-empty { font-size: 13px; color: var(--secondary); font-style: italic; }
         .deleted-card { opacity: 0.6; }
         .hidden { display: none !important; }
         @media (prefers-reduced-motion: reduce) {
@@ -289,6 +346,19 @@
                 <input type="checkbox" id="showDeleted">
                 Show my removed entries
             </label>
+
+            <div class="filter-bar">
+                <div class="filter-head">
+                    <span class="filter-label">Filter by person</span>
+                    <button type="button" class="filter-clear hidden" id="clearFilterBtn">Show everyone</button>
+                </div>
+                <div class="people-tray" id="peopleTray"></div>
+                <label class="trash-toggle" id="overlapWrap" style="margin: 12px 0 0;">
+                    <input type="checkbox" id="overlapOnly">
+                    Only days where everyone selected is free
+                </label>
+            </div>
+
             <div id="calendarContainer"></div>
         </div>
     </div>
@@ -341,6 +411,7 @@ const db = {
 let currentUser = null;
 let editingRecordId = null;
 let selectedDates = [];
+let selectedPeople = [];
 let records = [];
 let busy = false;
 
@@ -701,6 +772,95 @@ async function loadAndRender() {
     renderCalendarDashboard();
 }
 
+/* ---- People picker ----------------------------------------
+   The list is built from whoever has actually posted, so it
+   populates itself as people add availability and needs no
+   separate roster to maintain.
+   ---------------------------------------------------------- */
+
+function personKey(record) {
+    // Group by account, not display name, so a Discord rename
+    // doesn't split someone into two people in the list.
+    return record.user_id || `name:${record.name}`;
+}
+
+/* Names stored on a row are a snapshot from when it was posted.
+   People rename themselves, so resolve every account to the name
+   on its most recent entry and use that everywhere. Rebuilt on
+   each render from all records, including ones filtered out. */
+let nameByPerson = {};
+
+function rebuildNameIndex() {
+    const newest = {};
+    records.forEach(r => {
+        const key = personKey(r);
+        const stamp = r.created_at ? Date.parse(r.created_at) : 0;
+        if (!(key in newest) || stamp >= newest[key]) {
+            newest[key] = stamp;
+            nameByPerson[key] = r.name;
+        }
+    });
+}
+
+function nameFor(record) {
+    return nameByPerson[personKey(record)] || record.name;
+}
+
+function renderPeoplePicker(pool) {
+    const tray = $('peopleTray');
+    tray.innerHTML = '';
+
+    const people = new Map();
+    pool.forEach(r => {
+        const key = personKey(r);
+        if (!people.has(key)) people.set(key, nameFor(r));
+    });
+
+    // Drop selections for anyone whose entries are all gone.
+    selectedPeople = selectedPeople.filter(k => people.has(k));
+
+    if (people.size === 0) {
+        const hint = document.createElement('span');
+        hint.className = 'filter-empty';
+        hint.textContent = 'Names appear here once people post availability.';
+        tray.appendChild(hint);
+        $('clearFilterBtn').classList.add('hidden');
+        $('overlapWrap').classList.add('hidden');
+        return;
+    }
+
+    const sorted = [...people.entries()].sort((a, b) =>
+        a[1].localeCompare(b[1], undefined, { sensitivity: 'base' })
+    );
+
+    sorted.forEach(([key, name]) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'person-toggle';
+        btn.textContent = name;
+        const on = selectedPeople.includes(key);
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        btn.addEventListener('click', () => togglePerson(key));
+        tray.appendChild(btn);
+    });
+
+    $('clearFilterBtn').classList.toggle('hidden', selectedPeople.length === 0);
+    $('overlapWrap').classList.toggle('hidden', selectedPeople.length < 2);
+}
+
+function togglePerson(key) {
+    selectedPeople = selectedPeople.includes(key)
+        ? selectedPeople.filter(k => k !== key)
+        : [...selectedPeople, key];
+    renderCalendarDashboard();
+}
+
+function clearPeopleFilter() {
+    selectedPeople = [];
+    $('overlapOnly').checked = false;
+    renderCalendarDashboard();
+}
+
 function renderCalendarDashboard() {
     if (!currentUser) return;
 
@@ -709,12 +869,47 @@ function renderCalendarDashboard() {
     const container = $('calendarContainer');
     container.innerHTML = '';
 
-    const visible = records.filter(r =>
+    rebuildNameIndex();
+
+    const pool = records.filter(r =>
         !r.deleted || (showDeleted && r.user_id === currentUser.id)
     );
 
-    if (visible.length === 0) {
+    renderPeoplePicker(pool);
+
+    if (pool.length === 0) {
         container.innerHTML = '<p class="empty-state">Nothing on the calendar yet. Add your first dates on the left.</p>';
+        return;
+    }
+
+    let visible = selectedPeople.length === 0
+        ? pool
+        : pool.filter(r => selectedPeople.includes(personKey(r)));
+
+    // "Only days where everyone selected is free" — keep a day only
+    // if every selected person has at least one entry on it.
+    const overlapOn = selectedPeople.length >= 2 && $('overlapOnly').checked;
+    if (overlapOn) {
+        const byDay = {};
+        visible.forEach(r => {
+            const day = getDetailsForOffset(r.utc_start, viewerOffset).dateKey;
+            (byDay[day] = byDay[day] || new Set()).add(personKey(r));
+        });
+        const fullDays = new Set(
+            Object.keys(byDay).filter(day =>
+                selectedPeople.every(k => byDay[day].has(k))
+            )
+        );
+        visible = visible.filter(r =>
+            fullDays.has(getDetailsForOffset(r.utc_start, viewerOffset).dateKey)
+        );
+    }
+
+    if (visible.length === 0) {
+        const msg = overlapOn
+            ? 'No days yet where everyone selected is free. Try clearing the overlap filter.'
+            : 'No entries for the people selected.';
+        container.innerHTML = `<p class="empty-state">${msg}</p>`;
         return;
     }
 
@@ -732,7 +927,7 @@ function renderCalendarDashboard() {
         const sign = record.input_offset >= 0 ? '+' : '';
         groups[key].items.push({
             id: record.id,
-            name: record.name,
+            name: nameFor(record),
             mine: record.user_id === currentUser.id,
             deleted: !!record.deleted,
             status: record.status || 'available',
@@ -848,6 +1043,8 @@ $('addDateBtn').addEventListener('click', addSelectedDate);
 $('cancelBtn').addEventListener('click', resetFormState);
 $('viewerOffset').addEventListener('change', renderCalendarDashboard);
 $('showDeleted').addEventListener('change', renderCalendarDashboard);
+$('overlapOnly').addEventListener('change', renderCalendarDashboard);
+$('clearFilterBtn').addEventListener('click', clearPeopleFilter);
 
 $('availDate').addEventListener('keydown', e => {
     if (e.key === 'Enter') { e.preventDefault(); addSelectedDate(); }
