@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collab Availability Calendar</title>
+    <style>
+        :root {
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #0f172a;
+            --primary: #2563eb;
+            --border: #cbd5e1;
+            --success: #059669;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --secondary: #64748b;
+            --discord: #5865f2;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 20px;
+            margin: 0;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        header {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        select, input, button {
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        button {
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        button:focus-visible, input:focus-visible, select:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+        button:disabled { opacity: 0.55; cursor: not-allowed; }
+        .primary-btn { background: var(--primary); width: 100%; }
+        .primary-btn:hover:not(:disabled) { background: #1d4ed8; }
+
+        /* ---- Sign-in gate ---- */
+        .gate {
+            max-width: 460px;
+            margin: 60px auto;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 40px 32px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .gate h1 { margin: 0 0 8px; font-size: 24px; }
+        .gate p { color: var(--secondary); font-size: 15px; line-height: 1.5; margin: 0 0 24px; }
+        .discord-btn {
+            background: var(--discord);
+            width: 100%;
+            padding: 14px;
+            font-size: 15px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .discord-btn:hover:not(:disabled) { background: #4752c4; }
+        .discord-btn svg { width: 20px; height: 20px; fill: currentColor; }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+        .user-chip img { width: 32px; height: 32px; border-radius: 50%; }
+        .signout-btn { background: var(--secondary); padding: 6px 12px; font-size: 13px; }
+        .signout-btn:hover { background: #475569; }
+
+        .grid { display: grid; grid-template-columns: 1fr; gap: 25px; }
+        @media (min-width: 768px) {
+            .grid { grid-template-columns: 360px 1fr; }
+        }
+        .panel {
+            background: var(--card);
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .form-group { margin-bottom: 16px; }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 6px;
+            color: #475569;
+        }
+        .form-group input, .form-group select { width: 100%; box-sizing: border-box; }
+        .readonly-name { background: #f8fafc; color: var(--secondary); font-weight: 600; }
+
+        /* ---- Multi-date picker ---- */
+        .date-adder { display: flex; gap: 8px; }
+        .date-adder input { flex: 1; min-width: 0; }
+        .add-date-btn { background: var(--secondary); padding: 10px 14px; white-space: nowrap; }
+        .add-date-btn:hover:not(:disabled) { background: #475569; }
+        .chip-tray { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; min-height: 4px; }
+        .chip {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: #e0e7ff; color: #1e3a8a;
+            border: 1px solid #c7d2fe; border-radius: 999px;
+            padding: 4px 6px 4px 12px;
+            font-size: 13px; font-weight: 600;
+        }
+        .chip button {
+            background: transparent; color: #1e3a8a; padding: 0;
+            width: 18px; height: 18px; line-height: 1;
+            border-radius: 50%; font-size: 14px;
+        }
+        .chip button:hover { background: #c7d2fe; }
+        .chip-empty { font-size: 13px; color: var(--secondary); font-style: italic; }
+
+        .date-section { margin-bottom: 25px; }
+        .date-header {
+            font-size: 16px; font-weight: 700;
+            padding-bottom: 8px; margin-bottom: 12px;
+            border-bottom: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        .avail-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px; margin-bottom: 12px;
+            background: var(--card);
+        }
+        .avail-card.status-booked { border-left: 4px solid var(--primary); }
+        .avail-card.status-tentative { border-left: 4px solid var(--warning); }
+        .avail-card.status-available { border-left: 4px solid var(--success); }
+        .avail-card.mine { background: #f8fafc; }
+        .card-meta { font-size: 12px; color: #64748b; margin-bottom: 6px; }
+        .time-window { font-size: 16px; font-weight: 700; color: var(--success); margin-bottom: 10px; }
+        .status-badge {
+            display: inline-block; font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.04em;
+            padding: 2px 8px; border-radius: 4px;
+            margin-left: 8px; vertical-align: middle;
+        }
+        .badge-available { background: #d1fae5; color: #065f46; }
+        .badge-tentative { background: #fef3c7; color: #92400e; }
+        .badge-booked { background: #dbeafe; color: #1e40af; }
+        .badge-removed { background: #e2e8f0; color: #475569; }
+        .you-tag { font-size: 11px; font-weight: 700; color: var(--secondary); margin-left: 6px; }
+        .note-line { font-size: 14px; margin-bottom: 10px; color: #334155; }
+        .action-container { display: flex; gap: 8px; flex-wrap: wrap; }
+        .action-btn { padding: 4px 10px; font-size: 12px; border-radius: 4px; }
+        .edit-btn { background: var(--warning); }
+        .edit-btn:hover { background: #b45309; }
+        .delete-btn { background: var(--danger); }
+        .delete-btn:hover { background: #b91c1c; }
+        .restore-btn { background: var(--success); }
+        .restore-btn:hover { background: #047857; }
+        .cancel-btn { background: var(--secondary); margin-top: 8px; width: 100%; }
+        .cancel-btn:hover { background: #475569; }
+
+        .status-line { font-size: 13px; color: var(--secondary); margin-top: 12px; min-height: 18px; }
+        .status-line.error { color: var(--danger); font-weight: 600; }
+        .empty-state { color: #64748b; }
+        .trash-toggle {
+            font-size: 13px; color: var(--secondary);
+            display: flex; align-items: center; gap: 6px;
+            margin-bottom: 16px;
+        }
+        .trash-toggle input { width: auto; padding: 0; }
+        .deleted-card { opacity: 0.6; }
+        .hidden { display: none !important; }
+        @media (prefers-reduced-motion: reduce) {
+            * { transition: none !important; scroll-behavior: auto !important; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ============ SIGNED OUT ============ -->
+<div id="gateView" class="hidden">
+    <div class="gate">
+        <h1>Collab Availability Calendar</h1>
+        <p>Sign in with Discord to see when everyone is free and post your own availability.</p>
+        <button class="discord-btn" id="signInBtn">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.009c.12.099.246.198.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.331c-1.182 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+            Sign in with Discord
+        </button>
+        <div class="status-line" id="gateStatus"></div>
+    </div>
+</div>
+
+<!-- ============ SIGNED IN ============ -->
+<div id="appView" class="container hidden">
+    <header>
+        <div>
+            <h2 style="margin:0; font-size: 22px;">Collab Availability Calendar</h2>
+            <div style="font-size:13px; color:var(--secondary); margin-top:4px;">
+                Everyone sees the same schedule, shown in your chosen time zone.
+            </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+            <div>
+                <label for="viewerOffset"><strong>Viewing times in: </strong></label>
+                <select id="viewerOffset"></select>
+            </div>
+            <div class="user-chip">
+                <img id="userAvatar" alt="" hidden>
+                <span id="userLabel"></span>
+                <button class="signout-btn" id="signOutBtn">Sign out</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="grid">
+        <div class="panel">
+            <h3 id="formTitle" style="margin-top:0;">Add availability</h3>
+            <form id="availForm">
+                <div class="form-group">
+                    <label for="userName">Name</label>
+                    <input type="text" id="userName" class="readonly-name" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="userOffset">Your time zone offset</label>
+                    <select id="userOffset"></select>
+                </div>
+
+                <div class="form-group">
+                    <label for="availDate">Dates available</label>
+                    <div class="date-adder">
+                        <input type="date" id="availDate">
+                        <button type="button" class="add-date-btn" id="addDateBtn">Add date</button>
+                    </div>
+                    <div class="chip-tray" id="chipTray"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="startTime">Start time</label>
+                    <input type="time" id="startTime" required>
+                </div>
+                <div class="form-group">
+                    <label for="endTime">End time</label>
+                    <input type="time" id="endTime" required>
+                </div>
+                <div class="form-group">
+                    <label for="statusField">Status</label>
+                    <select id="statusField">
+                        <option value="available">Available</option>
+                        <option value="tentative">Tentative</option>
+                        <option value="booked">Collab booked</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="noteField">Note (optional)</label>
+                    <input type="text" id="noteField" placeholder="e.g., recording with Jae" maxlength="120">
+                </div>
+
+                <button type="submit" id="submitBtn" class="primary-btn">Post to calendar</button>
+                <button type="button" id="cancelBtn" class="cancel-btn hidden">Cancel edit</button>
+                <div class="status-line" id="formStatus"></div>
+            </form>
+        </div>
+
+        <div class="panel">
+            <h3 style="margin-top:0;">Shared schedule</h3>
+            <label class="trash-toggle">
+                <input type="checkbox" id="showDeleted">
+                Show my removed entries
+            </label>
+            <div id="calendarContainer"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ============================================================
+   CONFIG
+   The publishable key is meant to be visible here. Row Level
+   Security is what actually protects the data.
+   ============================================================ */
+
+const SUPABASE_URL = 'https://puohbggfdrlimnqeqmgi.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_ELy_imnCc9dfn4TmM2BO2g_DIS4rJr_';
+
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ============================================================
+   DATA LAYER
+   user_id is never sent from the browser — Postgres stamps it
+   via the column default, so it cannot be forged.
+   ============================================================ */
+
+const db = {
+    async select() {
+        return await client
+            .from('availability')
+            .select('*')
+            .order('utc_start', { ascending: true });
+    },
+    async insert(records) {
+        return await client.from('availability').insert(records);
+    },
+    async update(id, patch) {
+        return await client.from('availability').update(patch).eq('id', id);
+    },
+    async delete(id) {
+        return await client.from('availability').update({ deleted: true }).eq('id', id);
+    },
+    async restore(id) {
+        return await client.from('availability').update({ deleted: false }).eq('id', id);
+    }
+};
+
+/* ============================================================
+   STATE
+   ============================================================ */
+
+let currentUser = null;
+let editingRecordId = null;
+let selectedDates = [];
+let records = [];
+let busy = false;
+
+const $ = id => document.getElementById(id);
+
+/* ============================================================
+   AUTH
+   ============================================================ */
+
+async function signIn() {
+    $('signInBtn').disabled = true;
+    setGateStatus('Opening Discord\u2026');
+    const { error } = await client.auth.signInWithOAuth({
+        provider: 'discord',
+        options: { redirectTo: window.location.href.split('#')[0] }
+    });
+    if (error) {
+        $('signInBtn').disabled = false;
+        setGateStatus(`Could not reach Discord: ${error.message}`, true);
+    }
+}
+
+async function signOut() {
+    await client.auth.signOut();
+}
+
+function displayName(user) {
+    const m = user.user_metadata || {};
+    return m.full_name || m.name || m.user_name || m.preferred_username || 'Unknown';
+}
+
+function avatarUrl(user) {
+    const m = user.user_metadata || {};
+    return m.avatar_url || m.picture || null;
+}
+
+async function applySession(session) {
+    currentUser = session ? session.user : null;
+
+    if (!currentUser) {
+        $('appView').classList.add('hidden');
+        $('gateView').classList.remove('hidden');
+        $('signInBtn').disabled = false;
+        setGateStatus('');
+        return;
+    }
+
+    $('gateView').classList.add('hidden');
+    $('appView').classList.remove('hidden');
+
+    const name = displayName(currentUser);
+    $('userLabel').textContent = name;
+    $('userName').value = name;
+
+    const avatar = avatarUrl(currentUser);
+    if (avatar) {
+        $('userAvatar').src = avatar;
+        $('userAvatar').hidden = false;
+    } else {
+        $('userAvatar').hidden = true;
+    }
+
+    await loadAndRender();
+}
+
+/* ============================================================
+   SETUP
+   ============================================================ */
+
+function buildDropdowns() {
+    const viewerSelect = $('viewerOffset');
+    const userSelect = $('userOffset');
+    for (let i = -12; i <= 14; i++) {
+        const label = `UTC ${i >= 0 ? '+' : ''}${i}`;
+        viewerSelect.add(new Option(label, i));
+        userSelect.add(new Option(label, i));
+    }
+
+    // Default to the browser's own offset so most people never touch these.
+    const localOffset = -Math.round(new Date().getTimezoneOffset() / 60);
+    const clamped = String(Math.max(-12, Math.min(14, localOffset)));
+    viewerSelect.value = clamped;
+    userSelect.value = clamped;
+}
+
+/* ============================================================
+   MULTI-DATE CHIPS
+   ============================================================ */
+
+function addSelectedDate() {
+    const input = $('availDate');
+    const value = input.value;
+    if (!value) { setStatus('Pick a date first, then choose Add date.', true); return; }
+    if (selectedDates.includes(value)) { setStatus('That date is already on the list.', true); return; }
+    selectedDates.push(value);
+    selectedDates.sort();
+    input.value = '';
+    setStatus('');
+    renderChips();
+}
+
+function removeSelectedDate(value) {
+    selectedDates = selectedDates.filter(d => d !== value);
+    renderChips();
+}
+
+function renderChips() {
+    const tray = $('chipTray');
+    tray.innerHTML = '';
+
+    if (selectedDates.length === 0) {
+        const hint = document.createElement('span');
+        hint.className = 'chip-empty';
+        hint.textContent = editingRecordId
+            ? 'Editing changes one date at a time.'
+            : 'No dates added yet.';
+        tray.appendChild(hint);
+        return;
+    }
+
+    selectedDates.forEach(value => {
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+
+        const text = document.createElement('span');
+        text.textContent = prettyShortDate(value);
+        chip.appendChild(text);
+
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.textContent = '\u00d7';
+        remove.setAttribute('aria-label', `Remove ${prettyShortDate(value)}`);
+        remove.addEventListener('click', () => removeSelectedDate(value));
+        chip.appendChild(remove);
+
+        tray.appendChild(chip);
+    });
+}
+
+function prettyShortDate(isoDate) {
+    const [y, m, d] = isoDate.split('-').map(Number);
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const dow = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+    return `${dow} ${months[m - 1]} ${d}`;
+}
+
+/* ============================================================
+   SUBMIT — one row per selected date
+   ============================================================ */
+
+async function handleFormSubmit(e) {
+    e.preventDefault();
+    if (busy || !currentUser) return;
+
+    const offset = parseInt($('userOffset').value, 10);
+    const startStr = $('startTime').value;
+    const endStr = $('endTime').value;
+    const status = $('statusField').value;
+    const note = $('noteField').value.trim();
+
+    // A date left sitting in the picker still counts.
+    const pending = $('availDate').value;
+    if (pending && !selectedDates.includes(pending)) {
+        selectedDates.push(pending);
+        selectedDates.sort();
+        $('availDate').value = '';
+        renderChips();
+    }
+
+    if (selectedDates.length === 0) { setStatus('Add at least one date.', true); return; }
+    if (!startStr || !endStr) { setStatus('Add a start and end time.', true); return; }
+
+    const [sHour, sMin] = startStr.split(':').map(Number);
+    const [eHour, eMin] = endStr.split(':').map(Number);
+
+    const built = selectedDates.map(dateStr => {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        return {
+            orig_date: dateStr,
+            utc_start: Date.UTC(year, month - 1, day, sHour - offset, sMin),
+            utc_end: Date.UTC(year, month - 1, day, eHour - offset, eMin)
+        };
+    });
+
+    if (built.some(b => b.utc_end <= b.utc_start)) {
+        setStatus('End time must be after start time.', true);
+        return;
+    }
+
+    setBusy(true);
+
+    if (editingRecordId !== null) {
+        const b = built[0];
+        const { error } = await db.update(editingRecordId, {
+            input_offset: offset,
+            orig_date: b.orig_date,
+            orig_start: startStr,
+            orig_end: endStr,
+            utc_start: b.utc_start,
+            utc_end: b.utc_end,
+            status,
+            note
+        });
+        setBusy(false);
+        if (error) { setStatus(`Could not save the change: ${error.message}`, true); return; }
+        resetFormState();
+        await loadAndRender();
+        setStatus('Entry updated.');
+    } else {
+        const name = displayName(currentUser);
+        const stamp = Date.now();
+        const newRows = built.map((b, i) => ({
+            id: `${stamp}-${i}-${Math.random().toString(36).slice(2, 8)}`,
+            name,
+            input_offset: offset,
+            orig_date: b.orig_date,
+            orig_start: startStr,
+            orig_end: endStr,
+            utc_start: b.utc_start,
+            utc_end: b.utc_end,
+            status,
+            note,
+            deleted: false
+        }));
+
+        const { error } = await db.insert(newRows);
+        setBusy(false);
+        if (error) { setStatus(`Could not post: ${error.message}`, true); return; }
+        const count = newRows.length;
+        resetFormState();
+        await loadAndRender();
+        setStatus(count === 1 ? 'Posted 1 date.' : `Posted ${count} dates.`);
+    }
+}
+
+/* ============================================================
+   EDIT / DELETE / RESTORE
+   ============================================================ */
+
+function editRecord(id) {
+    const record = records.find(r => r.id === id);
+    if (!record) return;
+
+    editingRecordId = id;
+    selectedDates = [record.orig_date];
+
+    $('userOffset').value = record.input_offset;
+    $('startTime').value = record.orig_start;
+    $('endTime').value = record.orig_end;
+    $('statusField').value = record.status || 'available';
+    $('noteField').value = record.note || '';
+    $('availDate').value = record.orig_date;
+
+    $('formTitle').textContent = 'Edit entry';
+    $('submitBtn').textContent = 'Save changes';
+    $('cancelBtn').classList.remove('hidden');
+    $('addDateBtn').disabled = true;
+
+    renderChips();
+    setStatus('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function deleteRecord(id) {
+    if (busy) return;
+    if (!confirm('Remove this entry? You can bring it back with "Show my removed entries".')) return;
+
+    setBusy(true);
+    const { error } = await db.delete(id);
+    setBusy(false);
+    if (error) { setStatus(`Could not remove it: ${error.message}`, true); return; }
+
+    if (editingRecordId === id) resetFormState();
+    await loadAndRender();
+    setStatus('Entry removed.');
+}
+
+async function restoreRecord(id) {
+    if (busy) return;
+    setBusy(true);
+    const { error } = await db.restore(id);
+    setBusy(false);
+    if (error) { setStatus(`Could not restore it: ${error.message}`, true); return; }
+    await loadAndRender();
+    setStatus('Entry restored.');
+}
+
+function resetFormState() {
+    editingRecordId = null;
+    selectedDates = [];
+    $('availForm').reset();
+    if (currentUser) $('userName').value = displayName(currentUser);
+    $('userOffset').value = $('viewerOffset').value;
+    $('formTitle').textContent = 'Add availability';
+    $('submitBtn').textContent = 'Post to calendar';
+    $('cancelBtn').classList.add('hidden');
+    $('addDateBtn').disabled = false;
+    renderChips();
+    setStatus('');
+}
+
+function setBusy(state) {
+    busy = state;
+    $('submitBtn').disabled = state;
+    if (state) setStatus('Saving\u2026');
+}
+
+function setStatus(message, isError = false) {
+    const el = $('formStatus');
+    el.textContent = message;
+    el.className = isError ? 'status-line error' : 'status-line';
+}
+
+function setGateStatus(message, isError = false) {
+    const el = $('gateStatus');
+    el.textContent = message;
+    el.className = isError ? 'status-line error' : 'status-line';
+}
+
+/* ============================================================
+   TIME CONVERSION
+   ============================================================ */
+
+function getDetailsForOffset(epochMs, offsetHours) {
+    const shifted = new Date(Number(epochMs) + (offsetHours * 60 * 60 * 1000));
+
+    const yyyy = shifted.getUTCFullYear();
+    const mm = String(shifted.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(shifted.getUTCDate()).padStart(2, '0');
+
+    const daysOfWeek = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+    let hours = shifted.getUTCHours();
+    const minutes = String(shifted.getUTCMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+
+    return {
+        dateKey: `${yyyy}-${mm}-${dd}`,
+        headerText: `${daysOfWeek[shifted.getUTCDay()]}, ${months[shifted.getUTCMonth()]} ${shifted.getUTCDate()}, ${yyyy}`,
+        timeString: `${hours}:${minutes} ${ampm}`
+    };
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+
+async function loadAndRender() {
+    const { data, error } = await db.select();
+    if (error) {
+        $('calendarContainer').innerHTML =
+            '<p class="empty-state">Could not load the schedule. Refresh to try again.</p>';
+        return;
+    }
+    records = data || [];
+    renderCalendarDashboard();
+}
+
+function renderCalendarDashboard() {
+    if (!currentUser) return;
+
+    const viewerOffset = parseInt($('viewerOffset').value, 10);
+    const showDeleted = $('showDeleted').checked;
+    const container = $('calendarContainer');
+    container.innerHTML = '';
+
+    const visible = records.filter(r =>
+        !r.deleted || (showDeleted && r.user_id === currentUser.id)
+    );
+
+    if (visible.length === 0) {
+        container.innerHTML = '<p class="empty-state">Nothing on the calendar yet. Add your first dates on the left.</p>';
+        return;
+    }
+
+    const groups = {};
+
+    visible.forEach(record => {
+        const startDetails = getDetailsForOffset(record.utc_start, viewerOffset);
+        const endDetails = getDetailsForOffset(record.utc_end, viewerOffset);
+        const key = startDetails.dateKey;
+
+        if (!groups[key]) {
+            groups[key] = { headerText: startDetails.headerText, items: [] };
+        }
+
+        const sign = record.input_offset >= 0 ? '+' : '';
+        groups[key].items.push({
+            id: record.id,
+            name: record.name,
+            mine: record.user_id === currentUser.id,
+            deleted: !!record.deleted,
+            status: record.status || 'available',
+            note: record.note || '',
+            origInfo: `${record.orig_date} ${record.orig_start}\u2013${record.orig_end} (UTC${sign}${record.input_offset})`,
+            timeWindowText: `${startDetails.timeString} \u2013 ${endDetails.timeString}`,
+            sortKey: Number(record.utc_start)
+        });
+    });
+
+    Object.keys(groups).sort().forEach(key => {
+        const group = groups[key];
+        group.items.sort((a, b) => a.sortKey - b.sortKey);
+
+        const section = document.createElement('div');
+        section.className = 'date-section';
+
+        const header = document.createElement('div');
+        header.className = 'date-header';
+        header.textContent = group.headerText;
+        section.appendChild(header);
+
+        group.items.forEach(item => section.appendChild(buildCard(item)));
+        container.appendChild(section);
+    });
+}
+
+function buildCard(item) {
+    const card = document.createElement('div');
+    card.className = `avail-card status-${item.status}`
+        + (item.deleted ? ' deleted-card' : '')
+        + (item.mine ? ' mine' : '');
+
+    const nameRow = document.createElement('div');
+    nameRow.style.cssText = 'font-weight:700; font-size:15px; margin-bottom:4px;';
+    nameRow.textContent = item.name;
+
+    if (item.mine) {
+        const you = document.createElement('span');
+        you.className = 'you-tag';
+        you.textContent = '(you)';
+        nameRow.appendChild(you);
+    }
+
+    const badge = document.createElement('span');
+    badge.className = item.deleted ? 'status-badge badge-removed' : `status-badge badge-${item.status}`;
+    badge.textContent = item.deleted
+        ? 'Removed'
+        : { available: 'Available', tentative: 'Tentative', booked: 'Booked' }[item.status];
+    nameRow.appendChild(badge);
+    card.appendChild(nameRow);
+
+    const meta = document.createElement('div');
+    meta.className = 'card-meta';
+    meta.textContent = `Entered as ${item.origInfo}`;
+    card.appendChild(meta);
+
+    const windowEl = document.createElement('div');
+    windowEl.className = 'time-window';
+    windowEl.textContent = item.timeWindowText;
+    card.appendChild(windowEl);
+
+    if (item.note) {
+        const note = document.createElement('div');
+        note.className = 'note-line';
+        note.textContent = item.note;
+        card.appendChild(note);
+    }
+
+    // Controls only render on your own rows. RLS enforces the same
+    // rule server-side, so hiding the buttons is only courtesy.
+    if (item.mine) {
+        const actions = document.createElement('div');
+        actions.className = 'action-container';
+
+        if (item.deleted) {
+            const restore = document.createElement('button');
+            restore.className = 'action-btn restore-btn';
+            restore.textContent = 'Restore';
+            restore.addEventListener('click', () => restoreRecord(item.id));
+            actions.appendChild(restore);
+        } else {
+            const edit = document.createElement('button');
+            edit.className = 'action-btn edit-btn';
+            edit.textContent = 'Edit';
+            edit.addEventListener('click', () => editRecord(item.id));
+            actions.appendChild(edit);
+
+            const del = document.createElement('button');
+            del.className = 'action-btn delete-btn';
+            del.textContent = 'Remove';
+            del.addEventListener('click', () => deleteRecord(item.id));
+            actions.appendChild(del);
+        }
+
+        card.appendChild(actions);
+    }
+
+    return card;
+}
+
+/* ============================================================
+   WIRE UP
+   ============================================================ */
+
+buildDropdowns();
+renderChips();
+
+$('signInBtn').addEventListener('click', signIn);
+$('signOutBtn').addEventListener('click', signOut);
+$('availForm').addEventListener('submit', handleFormSubmit);
+$('addDateBtn').addEventListener('click', addSelectedDate);
+$('cancelBtn').addEventListener('click', resetFormState);
+$('viewerOffset').addEventListener('change', renderCalendarDashboard);
+$('showDeleted').addEventListener('change', renderCalendarDashboard);
+
+$('availDate').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); addSelectedDate(); }
+});
+
+// Fires on load, on sign-in, and on the return trip from Discord.
+client.auth.onAuthStateChange((_event, session) => applySession(session));
+
+// Initial check in case a session is already live.
+client.auth.getSession().then(({ data }) => applySession(data.session));
+</script>
+</body>
+</html>
