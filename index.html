@@ -240,7 +240,7 @@
         }
         .trash-toggle input { width: auto; padding: 0; }
 
-        /* ---- People picker ---- */
+        /* ---- People picker (dropdown) ---- */
         .filter-bar {
             border: 1px solid var(--border);
             border-radius: 8px;
@@ -254,47 +254,86 @@
             justify-content: space-between;
             gap: 12px;
             flex-wrap: wrap;
+            margin-bottom: 10px;
         }
-        .filter-label {
-            font-weight: 600;
-            font-size: 13px;
-            color: #475569;
-        }
-        .filter-clear {
-            background: transparent;
-            color: var(--primary);
-            padding: 2px 6px;
-            font-size: 13px;
-            text-decoration: underline;
-        }
-        .filter-clear:hover { background: #e2e8f0; }
-        .people-tray {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-top: 10px;
-        }
-        .person-toggle {
+        .filter-label { font-weight: 600; font-size: 13px; color: #475569; }
+        .filter-summary { font-size: 12px; color: var(--secondary); }
+
+        .dropdown { position: relative; }
+        .dropdown-trigger {
+            width: 100%;
+            box-sizing: border-box;
             background: var(--card);
             color: #334155;
             border: 1px solid var(--border);
-            border-radius: 999px;
-            padding: 5px 12px;
-            font-size: 13px;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 14px;
             font-weight: 600;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
         }
-        .person-toggle:hover { background: #e2e8f0; }
-        .person-toggle[aria-pressed="true"] {
-            background: var(--primary);
-            border-color: var(--primary);
-            color: #ffffff;
+        .dropdown-trigger:hover { background: #f1f5f9; }
+        .dropdown-trigger .caret { color: var(--secondary); font-size: 12px; }
+
+        .dropdown-panel {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            z-index: 30;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 6px 20px rgba(15,23,42,0.12);
+            padding: 10px;
         }
-        .person-toggle[aria-pressed="true"]:hover { background: #1d4ed8; }
-        .filter-note {
-            font-size: 12px;
+        .dropdown-search {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px 10px;
+            font-size: 14px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+        .name-list {
+            max-height: 220px;
+            overflow-y: auto;
+            margin: 0 0 8px;
+        }
+        .name-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 8px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .name-option:hover { background: #f1f5f9; }
+        .name-option input { width: auto; padding: 0; margin: 0; cursor: pointer; }
+        .name-list-empty {
+            font-size: 13px;
             color: var(--secondary);
-            margin-top: 10px;
+            font-style: italic;
+            padding: 10px 8px;
         }
+        .dropdown-actions {
+            display: flex;
+            gap: 8px;
+            border-top: 1px solid var(--border);
+            padding-top: 10px;
+        }
+        .apply-btn { background: var(--primary); flex: 1; padding: 8px; font-size: 13px; }
+        .apply-btn:hover:not(:disabled) { background: #1d4ed8; }
+        .clear-btn { background: var(--secondary); flex: 1; padding: 8px; font-size: 13px; }
+        .clear-btn:hover { background: #475569; }
+
+        .overlap-wrap { margin-top: 12px; }
         .filter-empty { font-size: 13px; color: var(--secondary); font-style: italic; }
         .deleted-card { opacity: 0.6; }
         .hidden { display: none !important; }
@@ -428,10 +467,26 @@
             <div class="filter-bar">
                 <div class="filter-head">
                     <span class="filter-label">Filter by person</span>
-                    <button type="button" class="filter-clear hidden" id="clearFilterBtn">Show everyone</button>
+                    <span class="filter-summary" id="filterSummary">Showing everyone</span>
                 </div>
-                <div class="people-tray" id="peopleTray"></div>
-                <label class="trash-toggle" id="overlapWrap" style="margin: 12px 0 0;">
+
+                <div class="dropdown">
+                    <button type="button" class="dropdown-trigger" id="dropdownTrigger" aria-expanded="false" aria-haspopup="true">
+                        <span id="dropdownLabel">Select people\u2026</span>
+                        <span class="caret" aria-hidden="true">\u25be</span>
+                    </button>
+
+                    <div class="dropdown-panel hidden" id="dropdownPanel">
+                        <input type="text" class="dropdown-search" id="nameSearch" placeholder="Search names\u2026" autocomplete="off">
+                        <div class="name-list" id="nameList"></div>
+                        <div class="dropdown-actions">
+                            <button type="button" class="apply-btn" id="applyFilterBtn">Apply</button>
+                            <button type="button" class="clear-btn" id="clearFilterBtn">Clear</button>
+                        </div>
+                    </div>
+                </div>
+
+                <label class="trash-toggle overlap-wrap hidden" id="overlapWrap">
                     <input type="checkbox" id="overlapOnly">
                     Only days where everyone selected is free
                 </label>
@@ -977,79 +1032,181 @@ function nameFor(record) {
     return nameByPerson[personKey(record)] || record.name;
 }
 
-function renderPeoplePicker(pool) {
-    const tray = $('peopleTray');
-    tray.innerHTML = '';
+/* ---- People picker (dropdown) ------------------------------
+   Two separate states:
+     selectedPeople - the filter currently applied to the calendar
+     pendingPeople  - checkbox state inside the open dropdown,
+                      not applied until the person clicks Apply
+   This lets someone tick boxes and confirm their selection before
+   the calendar changes under them.
+   ---------------------------------------------------------- */
 
+let pendingPeople = [];
+let dropdownOpen = false;
+
+function currentPeople(pool) {
+    // Map of key -> current display name, for whoever has posted.
     const people = new Map();
     pool.forEach(r => {
         const key = personKey(r);
         if (!people.has(key)) people.set(key, nameFor(r));
     });
+    return people;
+}
 
-    // Drop selections for anyone whose entries are all gone.
+function renderPeoplePicker(pool) {
+    const people = currentPeople(pool);
+
+    // Drop any applied/pending selections for people whose entries are all gone.
     selectedPeople = selectedPeople.filter(k => people.has(k));
+    pendingPeople = pendingPeople.filter(k => people.has(k));
+
+    updateFilterLabels(people);
 
     if (people.size === 0) {
-        const hint = document.createElement('span');
-        hint.className = 'filter-empty';
-        hint.textContent = 'Names appear here once people post availability.';
-        tray.appendChild(hint);
-        $('clearFilterBtn').classList.add('hidden');
+        $('dropdownTrigger').disabled = true;
+        $('dropdownLabel').textContent = 'No one has posted yet';
+        closeDropdown();
         $('overlapWrap').classList.add('hidden');
         return;
     }
+    $('dropdownTrigger').disabled = false;
+
+    // Only redraw the option list while the dropdown is open, so
+    // a background refresh doesn't fight with someone mid-selection.
+    if (dropdownOpen) renderNameList(people);
+
+    $('overlapWrap').classList.toggle('hidden', selectedPeople.length < 2);
+}
+
+function updateFilterLabels(people) {
+    const names = selectedPeople
+        .map(k => people.get(k))
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+
+    if (names.length === 0) {
+        $('dropdownLabel').textContent = 'Select people\u2026';
+        $('filterSummary').textContent = 'Showing everyone';
+    } else if (names.length <= 2) {
+        $('dropdownLabel').textContent = names.join(', ');
+        $('filterSummary').textContent = `Showing ${names.join(' & ')}`;
+    } else {
+        $('dropdownLabel').textContent = `${names.length} people selected`;
+        $('filterSummary').textContent = `Showing ${names.length} people`;
+    }
+}
+
+function renderNameList(people) {
+    const list = $('nameList');
+    const term = $('nameSearch').value.trim().toLowerCase();
+    list.innerHTML = '';
 
     const sorted = [...people.entries()].sort((a, b) =>
         a[1].localeCompare(b[1], undefined, { sensitivity: 'base' })
     );
 
-    sorted.forEach(([key, name]) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'person-toggle';
-        btn.textContent = name;
-        const on = selectedPeople.includes(key);
-        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-        btn.addEventListener('click', () => togglePerson(key));
-        tray.appendChild(btn);
-    });
+    const matches = sorted.filter(([, name]) => name.toLowerCase().includes(term));
 
-    $('clearFilterBtn').classList.toggle('hidden', selectedPeople.length === 0);
-    $('overlapWrap').classList.toggle('hidden', selectedPeople.length < 2);
+    if (matches.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'name-list-empty';
+        empty.textContent = term ? 'No names match that search.' : 'No one has posted yet.';
+        list.appendChild(empty);
+        return;
+    }
+
+    matches.forEach(([key, name]) => {
+        const label = document.createElement('label');
+        label.className = 'name-option';
+
+        const box = document.createElement('input');
+        box.type = 'checkbox';
+        box.checked = pendingPeople.includes(key);
+        box.addEventListener('change', () => {
+            pendingPeople = box.checked
+                ? [...pendingPeople, key]
+                : pendingPeople.filter(k => k !== key);
+        });
+
+        const text = document.createElement('span');
+        text.textContent = name;
+
+        label.appendChild(box);
+        label.appendChild(text);
+        list.appendChild(label);
+    });
 }
 
-function togglePerson(key) {
-    selectedPeople = selectedPeople.includes(key)
-        ? selectedPeople.filter(k => k !== key)
-        : [...selectedPeople, key];
+function openDropdown() {
+    dropdownOpen = true;
+    // Start from the currently applied filter so it reflects reality.
+    pendingPeople = [...selectedPeople];
+    $('dropdownPanel').classList.remove('hidden');
+    $('dropdownTrigger').setAttribute('aria-expanded', 'true');
+    $('nameSearch').value = '';
+    renderNameList(currentPeople(visiblePool()));
+    $('nameSearch').focus();
+}
+
+function closeDropdown() {
+    dropdownOpen = false;
+    $('dropdownPanel').classList.add('hidden');
+    $('dropdownTrigger').setAttribute('aria-expanded', 'false');
+}
+
+function toggleDropdown() {
+    if (dropdownOpen) closeDropdown();
+    else openDropdown();
+}
+
+function applyPeopleFilter() {
+    selectedPeople = [...pendingPeople];
+    if (selectedPeople.length < 2) $('overlapOnly').checked = false;
+    closeDropdown();
     renderCalendarDashboard();
 }
 
 function clearPeopleFilter() {
+    pendingPeople = [];
     selectedPeople = [];
     $('overlapOnly').checked = false;
+    closeDropdown();
     renderCalendarDashboard();
+}
+
+/* The set of records eligible to show: not deleted (or my own
+   removed ones when that box is ticked) AND not already in the past
+   by the viewer's clock. Past dates are hidden to cut clutter; the
+   rows stay in the database untouched. */
+function visiblePool() {
+    const showDeleted = $('showDeleted').checked;
+    const now = Date.now();
+    return records.filter(r => {
+        if (r.deleted && !(showDeleted && r.user_id === currentUser.id)) return false;
+        // An entry is "past" once its end time has elapsed. utc_end is a
+        // real instant, so this is the same moment regardless of offset;
+        // the offset only affects which calendar day it's filed under.
+        if (Number(r.utc_end) <= now) return false;
+        return true;
+    });
 }
 
 function renderCalendarDashboard() {
     if (!currentUser) return;
 
     const viewerOffset = parseInt($('viewerOffset').value, 10);
-    const showDeleted = $('showDeleted').checked;
     const container = $('calendarContainer');
     container.innerHTML = '';
 
     rebuildNameIndex();
 
-    const pool = records.filter(r =>
-        !r.deleted || (showDeleted && r.user_id === currentUser.id)
-    );
+    const pool = visiblePool();
 
     renderPeoplePicker(pool);
 
     if (pool.length === 0) {
-        container.innerHTML = '<p class="empty-state">Nothing on the calendar yet. Add your first dates on the left.</p>';
+        container.innerHTML = '<p class="empty-state">Nothing upcoming on the calendar. Add your first dates on the left.</p>';
         return;
     }
 
@@ -1222,7 +1379,17 @@ $('cancelBtn').addEventListener('click', resetFormState);
 $('viewerOffset').addEventListener('change', renderCalendarDashboard);
 $('showDeleted').addEventListener('change', renderCalendarDashboard);
 $('overlapOnly').addEventListener('change', renderCalendarDashboard);
+$('dropdownTrigger').addEventListener('click', toggleDropdown);
+$('applyFilterBtn').addEventListener('click', applyPeopleFilter);
 $('clearFilterBtn').addEventListener('click', clearPeopleFilter);
+$('nameSearch').addEventListener('input', () => renderNameList(currentPeople(visiblePool())));
+
+// Close the dropdown when clicking outside it.
+document.addEventListener('click', e => {
+    if (!dropdownOpen) return;
+    const dd = e.target.closest('.dropdown');
+    if (!dd) closeDropdown();
+});
 
 $('availDate').addEventListener('keydown', e => {
     if (e.key === 'Enter') { e.preventDefault(); addSelectedDate(); }
