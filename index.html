@@ -370,6 +370,24 @@
             position: relative;
         }
         .swatch.none-swatch[aria-pressed="true"] { border-color: var(--text); border-style: solid; }
+        .swatch.custom-swatch {
+            background: conic-gradient(#ef4444, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ec4899, #ef4444);
+            position: relative;
+        }
+        .swatch.custom-swatch::after {
+            content: "+";
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 700;
+            font-size: 16px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        .swatch.custom-swatch.custom-chosen { background-image: none; }
+        .swatch.custom-swatch.custom-chosen::after { content: ""; }
 
         /* ---- Entry color dot ---- */
         .entry-dot {
@@ -583,6 +601,7 @@
             <input type="text" id="displayNameInput" placeholder="e.g., Sofia" maxlength="40" required autocomplete="off">
             <div class="color-picker-label">Your color <span style="font-weight:400; color:var(--secondary);">(optional)</span></div>
             <div class="swatch-grid" id="swatchGrid"></div>
+            <input type="color" id="customColorInput" class="hidden" aria-hidden="true">
             <button type="submit" class="primary-btn" id="saveNameBtn">Continue</button>
         </form>
         <div class="status-line" id="nameStatus"></div>
@@ -862,6 +881,27 @@ function renderSwatches() {
         s.addEventListener('click', () => { pickedColor = c; renderSwatches(); });
         grid.appendChild(s);
     });
+
+    // Custom swatch — opens the browser color picker. If the current
+    // color isn't a preset (and isn't grey/none), it's a custom pick,
+    // so show it filled and selected rather than as the rainbow chip.
+    const isCustom = pickedColor && pickedColor !== NO_COLOR && !COLOR_PALETTE.includes(pickedColor);
+
+    const custom = document.createElement('button');
+    custom.type = 'button';
+    custom.className = 'swatch custom-swatch';
+    custom.title = 'Custom color';
+    custom.setAttribute('aria-pressed', isCustom ? 'true' : 'false');
+    if (isCustom) {
+        custom.style.background = pickedColor;
+        custom.classList.add('custom-chosen');
+    }
+    custom.addEventListener('click', () => $('customColorInput').click());
+    grid.appendChild(custom);
+
+    // Sync the hidden native input to a sensible starting value.
+    $('customColorInput').value = isCustom ? pickedColor
+        : (COLOR_PALETTE.includes(pickedColor) ? pickedColor : '#3b82f6');
 }
 
 async function saveDisplayName(e) {
@@ -1315,9 +1355,10 @@ function nameFor(record) {
    resolved to the latest value per account, same as names.
    Unpicked shows neutral grey. */
 const COLOR_PALETTE = [
-    '#ef4444', '#f97316', '#f59e0b', '#eab308',
-    '#84cc16', '#22c55e', '#14b8a6', '#06b6d4',
-    '#3b82f6', '#6366f1', '#a855f7', '#ec4899'
+    '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e',
+    '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1',
+    '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e', '#78716c',
+    '#b91c1c', '#c2410c', '#a16207', '#4d7c0f', '#047857', '#1e40af'
 ];
 const NO_COLOR = '#94a3b8'; // slate-400, the neutral grey dot
 
@@ -1880,6 +1921,10 @@ renderChips();
 $('signInBtn').addEventListener('click', () => signInWith('discord'));
 $('googleBtn').addEventListener('click', () => signInWith('google'));
 $('nameForm').addEventListener('submit', saveDisplayName);
+$('customColorInput').addEventListener('input', e => {
+    pickedColor = e.target.value;
+    renderSwatches();
+});
 $('nameSignOutBtn').addEventListener('click', signOut);
 $('cancelNameBtn').addEventListener('click', () => { showApp(); });
 $('changeNameBtn').addEventListener('click', () => {
