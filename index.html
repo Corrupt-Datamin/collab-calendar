@@ -337,6 +337,210 @@
         .filter-empty { font-size: 13px; color: var(--secondary); font-style: italic; }
         .deleted-card { opacity: 0.6; }
         .hidden { display: none !important; }
+
+        /* ---- Color swatches ---- */
+        .color-picker-label {
+            font-weight: 600;
+            font-size: 13px;
+            color: #475569;
+            text-align: left;
+            margin-bottom: 8px;
+        }
+        .swatch-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+        .swatch {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            padding: 0;
+        }
+        .swatch[aria-pressed="true"] {
+            border-color: var(--text);
+            box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--text);
+        }
+        .swatch.none-swatch {
+            background: var(--card);
+            border: 2px dashed var(--border);
+            position: relative;
+        }
+        .swatch.none-swatch[aria-pressed="true"] { border-color: var(--text); border-style: solid; }
+
+        /* ---- Entry color dot ---- */
+        .entry-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            border: 1px solid rgba(15,23,42,0.15);
+        }
+
+        /* ---- View toggle ---- */
+        .view-toggle {
+            display: inline-flex;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 18px;
+        }
+        .view-toggle button {
+            background: var(--card);
+            color: #475569;
+            border: none;
+            border-radius: 0;
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+        .view-toggle button + button { border-left: 1px solid var(--border); }
+        .view-toggle button[aria-pressed="true"] { background: var(--primary); color: #fff; }
+        .view-toggle button:hover:not([aria-pressed="true"]) { background: #f1f5f9; }
+
+        .period-nav {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .period-nav button {
+            background: var(--card);
+            color: #334155;
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            font-size: 15px;
+            line-height: 1;
+        }
+        .period-nav button:hover { background: #f1f5f9; }
+        .period-label { font-weight: 700; font-size: 16px; }
+        .period-today {
+            background: transparent;
+            color: var(--primary);
+            border: none;
+            font-size: 13px;
+            text-decoration: underline;
+            padding: 4px;
+        }
+
+        /* ---- Month grid ---- */
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .dow-head {
+            background: #f8fafc;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--secondary);
+            text-align: center;
+            padding: 8px 4px;
+        }
+        .day-cell {
+            background: var(--card);
+            min-height: 96px;
+            padding: 6px;
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .day-cell.other-month { background: #fbfcfd; }
+        .day-cell.is-today .day-num {
+            background: var(--primary);
+            color: #fff;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .day-cell.has-entries { cursor: pointer; }
+        .day-cell.has-entries:hover { background: #f1f5f9; }
+        .day-cell.overlap-day { outline: 2px solid var(--success); outline-offset: -2px; }
+        .day-num { font-weight: 600; color: #334155; margin-bottom: 2px; }
+        .day-pill {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: #f1f5f9;
+            border-radius: 4px;
+            padding: 2px 5px;
+            font-size: 11px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .day-pill .pill-name { overflow: hidden; text-overflow: ellipsis; }
+        .day-more { font-size: 11px; color: var(--primary); font-weight: 600; margin-top: 2px; }
+
+        /* ---- Week view ---- */
+        .week-wrap { display: flex; flex-direction: column; gap: 12px; }
+        .week-day {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .week-day-head {
+            background: #f8fafc;
+            padding: 8px 12px;
+            font-weight: 700;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+        .week-day-head.is-today { color: var(--primary); }
+        .week-day.overlap-day .week-day-head { background: #ecfdf5; }
+        .week-day-body { padding: 8px 12px; }
+        .week-day-empty { color: var(--secondary); font-size: 13px; font-style: italic; padding: 4px 0; }
+
+        /* ---- Day details popup ---- */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,0.45);
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 40px 16px;
+            z-index: 50;
+            overflow-y: auto;
+        }
+        .modal {
+            background: var(--card);
+            border-radius: 12px;
+            max-width: 520px;
+            width: 100%;
+            padding: 24px;
+            box-shadow: 0 20px 50px rgba(15,23,42,0.3);
+        }
+        .modal-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .modal-head h3 { margin: 0; font-size: 18px; }
+        .modal-close {
+            background: transparent;
+            color: var(--secondary);
+            border: none;
+            font-size: 22px;
+            line-height: 1;
+            padding: 4px 8px;
+        }
+        .modal-close:hover { background: #f1f5f9; border-radius: 6px; }
+
         @media (prefers-reduced-motion: reduce) {
             * { transition: none !important; scroll-behavior: auto !important; }
         }
@@ -377,6 +581,8 @@
         <p>This is what everyone on the calendar will see. Your real name won't be shown.</p>
         <form id="nameForm">
             <input type="text" id="displayNameInput" placeholder="e.g., Sofia" maxlength="40" required autocomplete="off">
+            <div class="color-picker-label">Your color <span style="font-weight:400; color:var(--secondary);">(optional)</span></div>
+            <div class="swatch-grid" id="swatchGrid"></div>
             <button type="submit" class="primary-btn" id="saveNameBtn">Continue</button>
         </form>
         <div class="status-line" id="nameStatus"></div>
@@ -403,6 +609,7 @@
                 <img id="userAvatar" alt="" hidden>
                 <span id="userLabel"></span>
                 <button type="button" class="link-btn" id="changeNameBtn">Change name</button>
+                <button type="button" class="link-btn" id="changeColorBtn">Change color</button>
                 <button class="signout-btn" id="signOutBtn">Sign out</button>
             </div>
         </div>
@@ -472,12 +679,12 @@
 
                 <div class="dropdown">
                     <button type="button" class="dropdown-trigger" id="dropdownTrigger" aria-expanded="false" aria-haspopup="true">
-                        <span id="dropdownLabel">Select people\u2026</span>
-                        <span class="caret" aria-hidden="true">\u25be</span>
+                        <span id="dropdownLabel">Select people…</span>
+                        <span class="caret" aria-hidden="true">▾</span>
                     </button>
 
                     <div class="dropdown-panel hidden" id="dropdownPanel">
-                        <input type="text" class="dropdown-search" id="nameSearch" placeholder="Search names\u2026" autocomplete="off">
+                        <input type="text" class="dropdown-search" id="nameSearch" placeholder="Search names…" autocomplete="off">
                         <div class="name-list" id="nameList"></div>
                         <div class="dropdown-actions">
                             <button type="button" class="apply-btn" id="applyFilterBtn">Apply</button>
@@ -492,8 +699,32 @@
                 </label>
             </div>
 
+            <div class="view-toggle" id="viewToggle" role="group" aria-label="Calendar view">
+                <button type="button" data-view="month" aria-pressed="true">Month</button>
+                <button type="button" data-view="week" aria-pressed="false">Week</button>
+                <button type="button" data-view="list" aria-pressed="false">List</button>
+            </div>
+
+            <div class="period-nav hidden" id="periodNav">
+                <button type="button" id="prevPeriod" aria-label="Previous">‹</button>
+                <span class="period-label" id="periodLabel"></span>
+                <button type="button" id="nextPeriod" aria-label="Next">›</button>
+                <button type="button" class="period-today" id="periodToday">Today</button>
+            </div>
+
             <div id="calendarContainer"></div>
         </div>
+    </div>
+</div>
+
+<!-- Day details popup -->
+<div id="dayModal" class="modal-backdrop hidden">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="dayModalTitle">
+        <div class="modal-head">
+            <h3 id="dayModalTitle"></h3>
+            <button type="button" class="modal-close" id="dayModalClose" aria-label="Close">×</button>
+        </div>
+        <div id="dayModalBody"></div>
     </div>
 </div>
 
@@ -607,6 +838,32 @@ function avatarUrl(user) {
     return m.avatar_url || m.picture || null;
 }
 
+let pickedColor = null;   // swatch chosen on the name screen; null = keep current / none
+
+function renderSwatches() {
+    const grid = $('swatchGrid');
+    grid.innerHTML = '';
+
+    // "No color" option first.
+    const none = document.createElement('button');
+    none.type = 'button';
+    none.className = 'swatch none-swatch';
+    none.title = 'No color';
+    none.setAttribute('aria-pressed', pickedColor === NO_COLOR ? 'true' : 'false');
+    none.addEventListener('click', () => { pickedColor = NO_COLOR; renderSwatches(); });
+    grid.appendChild(none);
+
+    COLOR_PALETTE.forEach(c => {
+        const s = document.createElement('button');
+        s.type = 'button';
+        s.className = 'swatch';
+        s.style.background = c;
+        s.setAttribute('aria-pressed', pickedColor === c ? 'true' : 'false');
+        s.addEventListener('click', () => { pickedColor = c; renderSwatches(); });
+        grid.appendChild(s);
+    });
+}
+
 async function saveDisplayName(e) {
     e.preventDefault();
     const value = $('displayNameInput').value.trim();
@@ -619,9 +876,10 @@ async function saveDisplayName(e) {
     $('saveNameBtn').disabled = true;
     setNameStatus('Saving\u2026');
 
-    const { data, error } = await client.auth.updateUser({
-        data: { display_name: value }
-    });
+    const payload = { display_name: value };
+    if (pickedColor !== null) payload.entry_color = pickedColor;
+
+    const { data, error } = await client.auth.updateUser({ data: payload });
 
     $('saveNameBtn').disabled = false;
 
@@ -631,11 +889,25 @@ async function saveDisplayName(e) {
     }
 
     setNameStatus('');
-    // updateUser returns the refreshed user; apply it without a round trip.
     if (data && data.user) {
         currentUser = data.user;
+        // Update this account's color on existing rows so past entries
+        // match the new choice, same idea as the name resolver.
+        if (pickedColor !== null) await backfillMyColor(pickedColor);
         await showApp();
     }
+}
+
+/* When someone sets or changes their color, stamp it onto their own
+   existing rows so the dot is consistent everywhere immediately.
+   RLS lets a user update only their own rows, so this is safe. */
+async function backfillMyColor(color) {
+    if (!currentUser) return;
+    const mine = records.filter(r => r.user_id === currentUser.id && r.color !== color);
+    if (mine.length === 0) return;
+    // One update per row; small counts at this scale.
+    await Promise.all(mine.map(r => db.update(r.id, { color })));
+    await loadAndRender();
 }
 
 function promptForName(prefill) {
@@ -644,6 +916,10 @@ function promptForName(prefill) {
     $('nameView').classList.remove('hidden');
     $('displayNameInput').value = prefill || '';
     setNameStatus('');
+
+    // Seed the swatch selection from the user's current color.
+    pickedColor = (currentUser && currentUser.user_metadata && currentUser.user_metadata.entry_color) || null;
+    renderSwatches();
 
     // Cancel is only an option if they already have a usable name.
     // First-time Google users must choose one or sign out.
@@ -843,6 +1119,7 @@ async function handleFormSubmit(e) {
     } else {
         const name = displayName(currentUser);
         const stamp = Date.now();
+        const color = myColor();
         const newRows = built.map((b, i) => ({
             id: `${stamp}-${i}-${Math.random().toString(36).slice(2, 8)}`,
             name,
@@ -854,6 +1131,7 @@ async function handleFormSubmit(e) {
             utc_end: b.utc_end,
             status,
             note,
+            color,
             deleted: false
         }));
 
@@ -1032,6 +1310,43 @@ function nameFor(record) {
     return nameByPerson[personKey(record)] || record.name;
 }
 
+/* ---- Per-person colors -------------------------------------
+   A color rides in user metadata (like display_name) and is
+   resolved to the latest value per account, same as names.
+   Unpicked shows neutral grey. */
+const COLOR_PALETTE = [
+    '#ef4444', '#f97316', '#f59e0b', '#eab308',
+    '#84cc16', '#22c55e', '#14b8a6', '#06b6d4',
+    '#3b82f6', '#6366f1', '#a855f7', '#ec4899'
+];
+const NO_COLOR = '#94a3b8'; // slate-400, the neutral grey dot
+
+let colorByPerson = {};
+
+function rebuildColorIndex() {
+    const newest = {};
+    colorByPerson = {};
+    records.forEach(r => {
+        if (!r.color) return;
+        const key = personKey(r);
+        const stamp = r.created_at ? Date.parse(r.created_at) : 0;
+        if (!(key in newest) || stamp >= newest[key]) {
+            newest[key] = stamp;
+            colorByPerson[key] = r.color;
+        }
+    });
+}
+
+function colorFor(record) {
+    return colorByPerson[personKey(record)] || record.color || NO_COLOR;
+}
+
+function myColor() {
+    if (!currentUser) return NO_COLOR;
+    const m = currentUser.user_metadata || {};
+    return m.entry_color || NO_COLOR;
+}
+
 /* ---- People picker (dropdown) ------------------------------
    Two separate states:
      selectedPeople - the filter currently applied to the calendar
@@ -1192,95 +1507,292 @@ function visiblePool() {
     });
 }
 
-function renderCalendarDashboard() {
-    if (!currentUser) return;
+/* ============================================================
+   RENDER — three views share one filtered dataset
+   ============================================================ */
 
+let currentView = 'month';   // 'month' | 'week' | 'list'
+let periodAnchor = startOfToday();   // a date inside the shown month/week
+
+function startOfToday() {
+    const n = new Date();
+    return new Date(n.getFullYear(), n.getMonth(), n.getDate());
+}
+
+// Build the [Y,M,D] the viewer sees for an instant, in their offset.
+function viewerYMD(epochMs, viewerOffset) {
+    const d = getDetailsForOffset(epochMs, viewerOffset);
+    const [y, m, day] = d.dateKey.split('-').map(Number);
+    return { y, m, day, key: d.dateKey };
+}
+
+function dateKeyOf(dateObj) {
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const d = String(dateObj.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+/* Everything the views need: the filtered items grouped by the
+   viewer-facing day key, plus the set of overlap days. Computed
+   once, consumed by whichever view is active. */
+function computeViewData() {
     const viewerOffset = parseInt($('viewerOffset').value, 10);
-    const container = $('calendarContainer');
-    container.innerHTML = '';
-
-    rebuildNameIndex();
-
     const pool = visiblePool();
 
     renderPeoplePicker(pool);
-
-    if (pool.length === 0) {
-        container.innerHTML = '<p class="empty-state">Nothing upcoming on the calendar. Add your first dates on the left.</p>';
-        return;
-    }
 
     let visible = selectedPeople.length === 0
         ? pool
         : pool.filter(r => selectedPeople.includes(personKey(r)));
 
-    // "Only days where everyone selected is free" — keep a day only
-    // if every selected person has at least one entry on it.
     const overlapOn = selectedPeople.length >= 2 && $('overlapOnly').checked;
+    const byDaySet = {};
+    visible.forEach(r => {
+        const key = viewerYMD(r.utc_start, viewerOffset).key;
+        (byDaySet[key] = byDaySet[key] || new Set()).add(personKey(r));
+    });
+    const overlapDays = new Set(
+        overlapOn
+            ? Object.keys(byDaySet).filter(k => selectedPeople.every(p => byDaySet[k].has(p)))
+            : []
+    );
     if (overlapOn) {
-        const byDay = {};
-        visible.forEach(r => {
-            const day = getDetailsForOffset(r.utc_start, viewerOffset).dateKey;
-            (byDay[day] = byDay[day] || new Set()).add(personKey(r));
-        });
-        const fullDays = new Set(
-            Object.keys(byDay).filter(day =>
-                selectedPeople.every(k => byDay[day].has(k))
-            )
-        );
-        visible = visible.filter(r =>
-            fullDays.has(getDetailsForOffset(r.utc_start, viewerOffset).dateKey)
-        );
+        visible = visible.filter(r => overlapDays.has(viewerYMD(r.utc_start, viewerOffset).key));
     }
 
-    if (visible.length === 0) {
-        const msg = overlapOn
-            ? 'No days yet where everyone selected is free. Try clearing the overlap filter.'
-            : 'No entries for the people selected.';
-        container.innerHTML = `<p class="empty-state">${msg}</p>`;
-        return;
-    }
-
-    const groups = {};
-
+    const byDay = {};
     visible.forEach(record => {
-        const startDetails = getDetailsForOffset(record.utc_start, viewerOffset);
-        const endDetails = getDetailsForOffset(record.utc_end, viewerOffset);
-        const key = startDetails.dateKey;
-
-        if (!groups[key]) {
-            groups[key] = { headerText: startDetails.headerText, items: [] };
-        }
-
+        const start = getDetailsForOffset(record.utc_start, viewerOffset);
+        const end = getDetailsForOffset(record.utc_end, viewerOffset);
+        const key = start.dateKey;
         const sign = record.input_offset >= 0 ? '+' : '';
-        groups[key].items.push({
+
+        (byDay[key] = byDay[key] || []).push({
             id: record.id,
             name: nameFor(record),
+            color: colorFor(record),
             mine: record.user_id === currentUser.id,
             deleted: !!record.deleted,
             status: record.status || 'available',
             note: record.note || '',
             origInfo: `${record.orig_date} ${record.orig_start}\u2013${record.orig_end} (UTC${sign}${record.input_offset})`,
-            timeWindowText: `${startDetails.timeString} \u2013 ${endDetails.timeString}`,
+            timeWindowText: `${start.timeString} \u2013 ${end.timeString}`,
+            headerText: start.headerText,
             sortKey: Number(record.utc_start)
         });
     });
 
-    Object.keys(groups).sort().forEach(key => {
-        const group = groups[key];
-        group.items.sort((a, b) => a.sortKey - b.sortKey);
+    Object.values(byDay).forEach(items => items.sort((a, b) => a.sortKey - b.sortKey));
 
+    return { pool, visible, byDay, overlapOn, overlapDays };
+}
+
+function renderCalendarDashboard() {
+    if (!currentUser) return;
+
+    rebuildNameIndex();
+    rebuildColorIndex();
+
+    const container = $('calendarContainer');
+    container.innerHTML = '';
+
+    const data = computeViewData();
+
+    // Period nav only makes sense for month/week.
+    $('periodNav').classList.toggle('hidden', currentView === 'list');
+
+    if (data.pool.length === 0) {
+        container.innerHTML = '<p class="empty-state">Nothing upcoming on the calendar. Add your first dates on the left.</p>';
+        $('periodLabel').textContent = '';
+        return;
+    }
+
+    if (currentView === 'list') renderListView(container, data);
+    else if (currentView === 'week') renderWeekView(container, data);
+    else renderMonthView(container, data);
+}
+
+/* ---- Colored dot helper ---- */
+function dot(color) {
+    const d = document.createElement('span');
+    d.className = 'entry-dot';
+    d.style.background = color;
+    return d;
+}
+
+/* ---- List view (original, now with dots) ---- */
+function renderListView(container, data) {
+    const keys = Object.keys(data.byDay).sort();
+    if (keys.length === 0) {
+        container.innerHTML = `<p class="empty-state">${emptyMsg(data)}</p>`;
+        return;
+    }
+    keys.forEach(key => {
+        const items = data.byDay[key];
         const section = document.createElement('div');
         section.className = 'date-section';
 
         const header = document.createElement('div');
         header.className = 'date-header';
-        header.textContent = group.headerText;
+        header.textContent = items[0].headerText;
+        if (data.overlapDays.has(key)) header.textContent += '  \u2713 everyone free';
         section.appendChild(header);
 
-        group.items.forEach(item => section.appendChild(buildCard(item)));
+        items.forEach(item => section.appendChild(buildCard(item)));
         container.appendChild(section);
     });
+}
+
+/* ---- Month view ---- */
+function renderMonthView(container, data) {
+    const y = periodAnchor.getFullYear();
+    const m = periodAnchor.getMonth();
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    $('periodLabel').textContent = `${monthNames[m]} ${y}`;
+
+    const grid = document.createElement('div');
+    grid.className = 'month-grid';
+
+    ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(d => {
+        const h = document.createElement('div');
+        h.className = 'dow-head';
+        h.textContent = d;
+        grid.appendChild(h);
+    });
+
+    // Monday-first grid. JS getDay(): Sun=0..Sat=6 -> Mon=0..Sun=6
+    const first = new Date(y, m, 1);
+    const lead = (first.getDay() + 6) % 7;
+    const start = new Date(y, m, 1 - lead);
+    const todayKey = dateKeyOf(startOfToday());
+
+    for (let i = 0; i < 42; i++) {
+        const cellDate = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+        const key = dateKeyOf(cellDate);
+        const items = data.byDay[key] || [];
+        const inMonth = cellDate.getMonth() === m;
+
+        const cell = document.createElement('div');
+        cell.className = 'day-cell'
+            + (inMonth ? '' : ' other-month')
+            + (key === todayKey ? ' is-today' : '')
+            + (items.length ? ' has-entries' : '')
+            + (data.overlapDays.has(key) ? ' overlap-day' : '');
+
+        const num = document.createElement('div');
+        num.className = 'day-num';
+        num.innerHTML = `<span>${cellDate.getDate()}</span>`;
+        cell.appendChild(num);
+
+        items.slice(0, 3).forEach(item => {
+            const pill = document.createElement('div');
+            pill.className = 'day-pill';
+            pill.appendChild(dot(item.color));
+            const nm = document.createElement('span');
+            nm.className = 'pill-name';
+            nm.textContent = item.name;
+            pill.appendChild(nm);
+            cell.appendChild(pill);
+        });
+
+        if (items.length > 3) {
+            const more = document.createElement('div');
+            more.className = 'day-more';
+            more.textContent = `+${items.length - 3} more`;
+            cell.appendChild(more);
+        }
+
+        if (items.length) {
+            cell.addEventListener('click', () => openDayModal(items[0].headerText, items));
+        }
+        grid.appendChild(cell);
+    }
+
+    container.appendChild(grid);
+}
+
+/* ---- Week view ---- */
+function renderWeekView(container, data) {
+    const anchor = periodAnchor;
+    const lead = (anchor.getDay() + 6) % 7;
+    const monday = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate() - lead);
+    const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+
+    const mn = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    $('periodLabel').textContent =
+        `${mn[monday.getMonth()]} ${monday.getDate()} \u2013 ${mn[sunday.getMonth()]} ${sunday.getDate()}`;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'week-wrap';
+    const dowNames = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    const todayKey = dateKeyOf(startOfToday());
+
+    for (let i = 0; i < 7; i++) {
+        const dayDate = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
+        const key = dateKeyOf(dayDate);
+        const items = data.byDay[key] || [];
+
+        const dayEl = document.createElement('div');
+        dayEl.className = 'week-day' + (data.overlapDays.has(key) ? ' overlap-day' : '');
+
+        const head = document.createElement('div');
+        head.className = 'week-day-head' + (key === todayKey ? ' is-today' : '');
+        head.textContent = `${dowNames[i]}, ${mn[dayDate.getMonth()]} ${dayDate.getDate()}`
+            + (data.overlapDays.has(key) ? '  \u2713 everyone free' : '');
+        dayEl.appendChild(head);
+
+        const body = document.createElement('div');
+        body.className = 'week-day-body';
+        if (items.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'week-day-empty';
+            empty.textContent = 'No availability';
+            body.appendChild(empty);
+        } else {
+            items.forEach(item => body.appendChild(buildCard(item)));
+        }
+        dayEl.appendChild(body);
+        wrap.appendChild(dayEl);
+    }
+
+    container.appendChild(wrap);
+}
+
+function emptyMsg(data) {
+    return data.overlapOn
+        ? 'No days where everyone selected is free. Try clearing the overlap filter.'
+        : (selectedPeople.length ? 'No entries for the people selected.' : 'Nothing upcoming.');
+}
+
+/* ---- Day details popup ---- */
+function openDayModal(title, items) {
+    $('dayModalTitle').textContent = title;
+    const body = $('dayModalBody');
+    body.innerHTML = '';
+    items.forEach(item => body.appendChild(buildCard(item)));
+    $('dayModal').classList.remove('hidden');
+}
+
+function closeDayModal() {
+    $('dayModal').classList.add('hidden');
+}
+
+function setView(view) {
+    currentView = view;
+    document.querySelectorAll('#viewToggle button').forEach(b =>
+        b.setAttribute('aria-pressed', b.dataset.view === view ? 'true' : 'false')
+    );
+    renderCalendarDashboard();
+}
+
+function shiftPeriod(dir) {
+    if (currentView === 'month') {
+        periodAnchor = new Date(periodAnchor.getFullYear(), periodAnchor.getMonth() + dir, 1);
+    } else {
+        periodAnchor = new Date(periodAnchor.getFullYear(), periodAnchor.getMonth(), periodAnchor.getDate() + dir * 7);
+    }
+    renderCalendarDashboard();
 }
 
 function buildCard(item) {
@@ -1290,8 +1802,11 @@ function buildCard(item) {
         + (item.mine ? ' mine' : '');
 
     const nameRow = document.createElement('div');
-    nameRow.style.cssText = 'font-weight:700; font-size:15px; margin-bottom:4px;';
-    nameRow.textContent = item.name;
+    nameRow.style.cssText = 'font-weight:700; font-size:15px; margin-bottom:4px; display:flex; align-items:center; gap:7px;';
+    nameRow.appendChild(dot(item.color));
+    const nameText = document.createElement('span');
+    nameText.textContent = item.name;
+    nameRow.appendChild(nameText);
 
     if (item.mine) {
         const you = document.createElement('span');
@@ -1325,8 +1840,6 @@ function buildCard(item) {
         card.appendChild(note);
     }
 
-    // Controls only render on your own rows. RLS enforces the same
-    // rule server-side, so hiding the buttons is only courtesy.
     if (item.mine) {
         const actions = document.createElement('div');
         actions.className = 'action-container';
@@ -1341,7 +1854,7 @@ function buildCard(item) {
             const edit = document.createElement('button');
             edit.className = 'action-btn edit-btn';
             edit.textContent = 'Edit';
-            edit.addEventListener('click', () => editRecord(item.id));
+            edit.addEventListener('click', () => { closeDayModal(); editRecord(item.id); });
             actions.appendChild(edit);
 
             const del = document.createElement('button');
@@ -1372,6 +1885,10 @@ $('cancelNameBtn').addEventListener('click', () => { showApp(); });
 $('changeNameBtn').addEventListener('click', () => {
     promptForName(displayName(currentUser) === 'Unknown' ? '' : displayName(currentUser));
 });
+$('changeColorBtn').addEventListener('click', () => {
+    // Same screen; name is prefilled so they can just adjust the swatch.
+    promptForName(displayName(currentUser) === 'Unknown' ? '' : displayName(currentUser));
+});
 $('signOutBtn').addEventListener('click', signOut);
 $('availForm').addEventListener('submit', handleFormSubmit);
 $('addDateBtn').addEventListener('click', addSelectedDate);
@@ -1383,6 +1900,29 @@ $('dropdownTrigger').addEventListener('click', toggleDropdown);
 $('applyFilterBtn').addEventListener('click', applyPeopleFilter);
 $('clearFilterBtn').addEventListener('click', clearPeopleFilter);
 $('nameSearch').addEventListener('input', () => renderNameList(currentPeople(visiblePool())));
+
+// View toggle + period navigation
+document.querySelectorAll('#viewToggle button').forEach(b =>
+    b.addEventListener('click', () => setView(b.dataset.view))
+);
+$('prevPeriod').addEventListener('click', () => shiftPeriod(-1));
+$('nextPeriod').addEventListener('click', () => shiftPeriod(1));
+$('periodToday').addEventListener('click', () => { periodAnchor = startOfToday(); renderCalendarDashboard(); });
+
+// Day details popup
+$('dayModalClose').addEventListener('click', closeDayModal);
+$('dayModal').addEventListener('click', e => { if (e.target === $('dayModal')) closeDayModal(); });
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !$('dayModal').classList.contains('hidden')) closeDayModal();
+});
+
+// Default phones to week view, where the month grid is too cramped.
+if (window.matchMedia('(max-width: 640px)').matches) {
+    currentView = 'week';
+    document.querySelectorAll('#viewToggle button').forEach(b =>
+        b.setAttribute('aria-pressed', b.dataset.view === 'week' ? 'true' : 'false')
+    );
+}
 
 // Close the dropdown when clicking outside it.
 document.addEventListener('click', e => {
