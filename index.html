@@ -1388,6 +1388,48 @@ function myColor() {
     return m.entry_color || NO_COLOR;
 }
 
+/* Turn any picked color into one that's readable as text on a white
+   card. Light colors (pale yellow, light green) are darkened until
+   they clear a contrast threshold; already-dark colors pass through.
+   The stored color is never changed — this is display-only. */
+function readableTextColor(hex) {
+    const rgb = hexToRgb(hex);
+    if (!rgb) return '#334155';
+    // Relative luminance (WCAG). White background luminance is 1.0.
+    let { r, g, b } = rgb;
+    let lum = relLuminance(r, g, b);
+    // Darken toward black until contrast with white is comfortable (>= 4.5).
+    // contrast on white = (1 + 0.05) / (lum + 0.05)
+    let guard = 0;
+    while ((1.05) / (lum + 0.05) < 4.5 && guard < 40) {
+        r = Math.round(r * 0.9);
+        g = Math.round(g * 0.9);
+        b = Math.round(b * 0.9);
+        lum = relLuminance(r, g, b);
+        guard++;
+    }
+    return `rgb(${r}, ${g}, ${b})`;
+}
+
+function hexToRgb(hex) {
+    if (typeof hex !== 'string') return null;
+    const m = hex.replace('#', '');
+    if (m.length !== 6) return null;
+    const r = parseInt(m.slice(0, 2), 16);
+    const g = parseInt(m.slice(2, 4), 16);
+    const b = parseInt(m.slice(4, 6), 16);
+    if ([r, g, b].some(Number.isNaN)) return null;
+    return { r, g, b };
+}
+
+function relLuminance(r, g, b) {
+    const chan = c => {
+        c = c / 255;
+        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * chan(r) + 0.7152 * chan(g) + 0.0722 * chan(b);
+}
+
 /* ---- People picker (dropdown) ------------------------------
    Two separate states:
      selectedPeople - the filter currently applied to the calendar
@@ -1654,15 +1696,7 @@ function renderCalendarDashboard() {
     else renderMonthView(container, data);
 }
 
-/* ---- Colored dot helper ---- */
-function dot(color) {
-    const d = document.createElement('span');
-    d.className = 'entry-dot';
-    d.style.background = color;
-    return d;
-}
-
-/* ---- List view (original, now with dots) ---- */
+/* ---- List view ---- */
 function renderListView(container, data) {
     const keys = Object.keys(data.byDay).sort();
     if (keys.length === 0) {
@@ -1729,10 +1763,11 @@ function renderMonthView(container, data) {
         items.slice(0, 3).forEach(item => {
             const pill = document.createElement('div');
             pill.className = 'day-pill';
-            pill.appendChild(dot(item.color));
             const nm = document.createElement('span');
             nm.className = 'pill-name';
             nm.textContent = item.name;
+            nm.style.color = readableTextColor(item.color);
+            nm.style.fontWeight = '700';
             pill.appendChild(nm);
             cell.appendChild(pill);
         });
@@ -1844,9 +1879,9 @@ function buildCard(item) {
 
     const nameRow = document.createElement('div');
     nameRow.style.cssText = 'font-weight:700; font-size:15px; margin-bottom:4px; display:flex; align-items:center; gap:7px;';
-    nameRow.appendChild(dot(item.color));
     const nameText = document.createElement('span');
     nameText.textContent = item.name;
+    nameText.style.color = readableTextColor(item.color);
     nameRow.appendChild(nameText);
 
     if (item.mine) {
